@@ -39,7 +39,7 @@ public class MainActivity extends Activity implements SurfaceTextureListener{
 			long now = SystemClock.uptimeMillis();
 			long next = now + (1000 - now % 1000);
 
-			handler.postAtTime(mTicker,next);//延迟一秒再次执行runnable
+			handler.postAtTime(mTicker,next);//延迟一秒再次执行runnable,就跟计时器一样效果
 
 			if(mMediaPlayer!=null&&mMediaPlayer.isPlaying()){
 				seekBar.setProgress(mMediaPlayer.getCurrentPosition());//更新播放进度
@@ -68,6 +68,7 @@ public class MainActivity extends Activity implements SurfaceTextureListener{
 				mMediaPlayer.seekTo(progress);
 			}
 		}
+
 		@Override
 		public void onStartTrackingTouch(SeekBar seekBar) {}
 		@Override
@@ -80,7 +81,7 @@ public class MainActivity extends Activity implements SurfaceTextureListener{
 		surface=new Surface(surfaceTexture);
 		new PlayerVideo().start();//开启一个线程去播放视频
 
-		handler.post(mTicker);
+		handler.post(mTicker);//更新进度
 	}
 
 	@Override
@@ -108,21 +109,21 @@ public class MainActivity extends Activity implements SurfaceTextureListener{
 		public void run(){
 			 try {
 				  File file=new File(Environment.getExternalStorageDirectory()+"/ansen.mp4");
-				  if(!file.exists()){//文件不存在
+				  if(!file.exists()){//文件不存在 从assets下复制到sdcard上
 					  copyFile();
 				  }
 				  mMediaPlayer= new MediaPlayer();
-				  mMediaPlayer.setDataSource(file.getAbsolutePath()); 
+				  mMediaPlayer.setDataSource(file.getAbsolutePath());//设置播放路径
 				  mMediaPlayer.setSurface(surface);
 				  mMediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
-				  mMediaPlayer.setOnCompletionListener(onCompletionListener);
+				  mMediaPlayer.setOnCompletionListener(onCompletionListener);//播放完成监听
 				  mMediaPlayer.setOnPreparedListener(new OnPreparedListener() {
 					@Override
-					public void onPrepared(MediaPlayer mp){
+					public void onPrepared(MediaPlayer mp){//预加载完成
 						videoImage.setVisibility(View.GONE);
-						mMediaPlayer.start();
+						mMediaPlayer.start();//开始播放
 
-						seekBar.setMax(mMediaPlayer.getDuration());
+						seekBar.setMax(mMediaPlayer.getDuration());//设置总进度
 					}
 				  });
 				  mMediaPlayer.prepare();
