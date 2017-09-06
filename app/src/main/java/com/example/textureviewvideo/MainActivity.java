@@ -64,15 +64,24 @@ public class MainActivity extends Activity implements SurfaceTextureListener{
 	private SeekBar.OnSeekBarChangeListener onSeekBarChangeListener=new SeekBar.OnSeekBarChangeListener() {
 		@Override
 		public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-			if(mMediaPlayer!=null&&mMediaPlayer.isPlaying()){
-				mMediaPlayer.seekTo(progress);
-			}
+//			if(mMediaPlayer!=null&&mMediaPlayer.isPlaying()){
+//				mMediaPlayer.seekTo(progress);
+//			}
+
 		}
 
 		@Override
-		public void onStartTrackingTouch(SeekBar seekBar) {}
+		public void onStartTrackingTouch(SeekBar seekBar) {
+			Log.i(Tag,"onStartTrackingTouch");
+		}
+
 		@Override
-		public void onStopTrackingTouch(SeekBar seekBar) {}
+		public void onStopTrackingTouch(SeekBar seekBar) {
+			Log.i(Tag,"onStopTrackingTouch");
+			if(mMediaPlayer!=null&&mMediaPlayer.isPlaying()){
+				mMediaPlayer.seekTo(seekBar.getProgress());
+			}
+		}
 	};
 	
 	@Override
@@ -108,12 +117,11 @@ public class MainActivity extends Activity implements SurfaceTextureListener{
 		@Override
 		public void run(){
 			 try {
-				  File file=new File(Environment.getExternalStorageDirectory()+"/ansen.mp4");
-				  if(!file.exists()){//文件不存在 从assets下复制到sdcard上
-					  copyFile();
-				  }
+				  String newFilePath = Environment.getExternalStorageDirectory()+"/ansen.mp4";
+				  copyFile(newFilePath);//从assets下复制到sdcard上
+
 				  mMediaPlayer= new MediaPlayer();
-				  mMediaPlayer.setDataSource(file.getAbsolutePath());//设置播放路径
+				  mMediaPlayer.setDataSource(newFilePath);//设置播放路径
 				  mMediaPlayer.setSurface(surface);
 				  mMediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
 				  mMediaPlayer.setOnCompletionListener(onCompletionListener);//播放完成监听
@@ -146,22 +154,24 @@ public class MainActivity extends Activity implements SurfaceTextureListener{
 	/**
 	 * 如果sdcard没有文件就复制过去
 	 */
-	private void copyFile() {
+	private void copyFile(String newFilePath) {
 	    AssetManager assetManager = this.getAssets();
 	    try {
-			InputStream in = assetManager.open("ansen.mp4");
-	        String newFileName = Environment.getExternalStorageDirectory()+"/ansen.mp4";
-			OutputStream out = new FileOutputStream(newFileName);
-	        byte[] buffer = new byte[1024];
-	        int read;
-	        while ((read = in.read(buffer)) != -1) {
-	            out.write(buffer, 0, read);
-	        }
-	        in.close();
-	        in = null;
-	        out.flush();
-	        out.close();
-	        out = null;
+			File file=new File(newFilePath);
+			if(!file.exists()){
+				InputStream in = assetManager.open("ansen.mp4");
+				OutputStream out = new FileOutputStream(file);
+				byte[] buffer = new byte[1024];
+				int read;
+				while ((read = in.read(buffer)) != -1) {
+					out.write(buffer, 0, read);
+				}
+				in.close();
+				in = null;
+				out.flush();
+				out.close();
+				out = null;
+			}
 	    } catch (Exception e) {
 	        Log.e(Tag, e.getMessage());
 	    }
