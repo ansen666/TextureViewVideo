@@ -64,10 +64,6 @@ public class MainActivity extends Activity implements SurfaceTextureListener{
 	private SeekBar.OnSeekBarChangeListener onSeekBarChangeListener=new SeekBar.OnSeekBarChangeListener() {
 		@Override
 		public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-//			if(mMediaPlayer!=null&&mMediaPlayer.isPlaying()){
-//				mMediaPlayer.seekTo(progress);
-//			}
-
 		}
 
 		@Override
@@ -77,7 +73,6 @@ public class MainActivity extends Activity implements SurfaceTextureListener{
 
 		@Override
 		public void onStopTrackingTouch(SeekBar seekBar) {
-			Log.i(Tag,"onStopTrackingTouch");
 			if(mMediaPlayer!=null&&mMediaPlayer.isPlaying()){
 				mMediaPlayer.seekTo(seekBar.getProgress());
 			}
@@ -95,12 +90,10 @@ public class MainActivity extends Activity implements SurfaceTextureListener{
 
 	@Override
 	public void onSurfaceTextureSizeChanged(SurfaceTexture surface, int width,int height) {
-		Log.i(Tag,"onSurfaceTextureSizeChanged");
 	}
 	
 	@Override
 	public boolean onSurfaceTextureDestroyed(SurfaceTexture surfaceTexture) {
-		Log.i(Tag,"onSurfaceTextureDestroyed");
 		surface=null;
 		mMediaPlayer.stop();
 		mMediaPlayer.release();
@@ -110,7 +103,6 @@ public class MainActivity extends Activity implements SurfaceTextureListener{
 	
 	@Override
 	public void onSurfaceTextureUpdated(SurfaceTexture surfaceTexture) {
-		Log.i(Tag,"onSurfaceTextureUpdated");
 	}
 
 	private class PlayerVideo extends Thread{
@@ -144,7 +136,6 @@ public class MainActivity extends Activity implements SurfaceTextureListener{
 	private MediaPlayer.OnCompletionListener onCompletionListener=new MediaPlayer.OnCompletionListener() {
 		@Override
 		public void onCompletion(MediaPlayer mediaPlayer) {
-			Log.i(Tag,"播放完成,显示图片");
 			videoImage.setVisibility(View.VISIBLE);
 			seekBar.setProgress(0);
 			handler.removeCallbacks(mTicker);
