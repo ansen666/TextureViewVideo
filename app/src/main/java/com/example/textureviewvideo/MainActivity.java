@@ -1,19 +1,12 @@
 package com.example.textureviewvideo;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.InputStream;
-import java.io.OutputStream;
-
 import android.app.Activity;
-import android.content.res.AssetManager;
 import android.graphics.SurfaceTexture;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.media.MediaPlayer.OnPreparedListener;
-import android.nfc.Tag;
+import android.net.Uri;
 import android.os.Bundle;
-import android.os.Environment;
 import android.os.Handler;
 import android.os.SystemClock;
 import android.util.Log;
@@ -24,8 +17,9 @@ import android.view.TextureView.SurfaceTextureListener;
 import android.widget.ImageView;
 import android.widget.SeekBar;
 
-public class MainActivity extends Activity implements SurfaceTextureListener{
+public class MainActivity extends Activity{
 	private final String Tag = MainActivity.class.getSimpleName();
+
 	private MediaPlayer mMediaPlayer;
 	private Surface surface;
 	
@@ -34,7 +28,7 @@ public class MainActivity extends Activity implements SurfaceTextureListener{
 
 	private Handler handler=new Handler();
 
-	private final Runnable mTicker = new Runnable() {
+	private final Runnable mTicker = new Runnable(){
 		public void run() {
 			long now = SystemClock.uptimeMillis();
 			long next = now + (1000 - now % 1000);
@@ -53,77 +47,58 @@ public class MainActivity extends Activity implements SurfaceTextureListener{
 		setContentView(R.layout.activity_main);
 
 		TextureView textureView=(TextureView) findViewById(R.id.textureview);
-		textureView.setSurfaceTextureListener(this);//设置监听函数  重写4个方法
+		textureView.setSurfaceTextureListener(surfaceTextureListener);//设置监听函数  重写4个方法
 
 		videoImage=(ImageView) findViewById(R.id.video_image);
 
 		seekBar= (SeekBar) findViewById(R.id.seekbar);
-		seekBar.setOnSeekBarChangeListener(onSeekBarChangeListener);
+		seekBar.setOnSeekBarChangeListener(onSeekBarChangeListener);//seekbar改变监听
 	}
 
-	private SeekBar.OnSeekBarChangeListener onSeekBarChangeListener=new SeekBar.OnSeekBarChangeListener() {
+	private SurfaceTextureListener surfaceTextureListener=new SurfaceTextureListener() {
+		//SurfaceTexture可用
 		@Override
-		public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+		public void onSurfaceTextureAvailable(SurfaceTexture surfaceTexture, int width,int height) {
+			surface=new Surface(surfaceTexture);
+			new PlayerVideoThread().start();//开启一个线程去播放视频
 		}
 
 		@Override
-		public void onStartTrackingTouch(SeekBar seekBar) {
-			Log.i(Tag,"onStartTrackingTouch");
+		public void onSurfaceTextureSizeChanged(SurfaceTexture surface, int width,int height) {//尺寸改变
 		}
 
 		@Override
-		public void onStopTrackingTouch(SeekBar seekBar) {
-			if(mMediaPlayer!=null&&mMediaPlayer.isPlaying()){
-				mMediaPlayer.seekTo(seekBar.getProgress());
-			}
+		public boolean onSurfaceTextureDestroyed(SurfaceTexture surfaceTexture) {//销毁
+			surface=null;
+			mMediaPlayer.stop();
+			mMediaPlayer.release();
+			mMediaPlayer=null;
+			return true;
+		}
+
+		@Override
+		public void onSurfaceTextureUpdated(SurfaceTexture surfaceTexture) {//更新
 		}
 	};
-	
-	@Override
-	public void onSurfaceTextureAvailable(SurfaceTexture surfaceTexture, int width,int height) {
-		Log.i(Tag,"onSurfaceTextureAvailable");
-		surface=new Surface(surfaceTexture);
-		new PlayerVideo().start();//开启一个线程去播放视频
 
-		handler.post(mTicker);//更新进度
-	}
-
-	@Override
-	public void onSurfaceTextureSizeChanged(SurfaceTexture surface, int width,int height) {
-	}
-	
-	@Override
-	public boolean onSurfaceTextureDestroyed(SurfaceTexture surfaceTexture) {
-		surface=null;
-		mMediaPlayer.stop();
-		mMediaPlayer.release();
-		mMediaPlayer=null;
-		return true;
-	}
-	
-	@Override
-	public void onSurfaceTextureUpdated(SurfaceTexture surfaceTexture) {
-	}
-
-	private class PlayerVideo extends Thread{
+	private class PlayerVideoThread extends Thread{
 		@Override
 		public void run(){
 			 try {
-				  String newFilePath = Environment.getExternalStorageDirectory()+"/ansen.mp4";
-				  copyFile(newFilePath);//从assets下复制到sdcard上
-
 				  mMediaPlayer= new MediaPlayer();
-				  mMediaPlayer.setDataSource(newFilePath);//设置播放路径
-				  mMediaPlayer.setSurface(surface);
-				  mMediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
+				  Uri uri = Uri.parse("android.resource://com.example.textureviewvideo/"+R.raw.ansen);
+				  mMediaPlayer.setDataSource(MainActivity.this,uri);//设置播放资源(可以是应用的资源文件／url／sdcard路径)
+				  mMediaPlayer.setSurface(surface);//设置渲染画板
+				  mMediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);//设置播放类型
 				  mMediaPlayer.setOnCompletionListener(onCompletionListener);//播放完成监听
-				  mMediaPlayer.setOnPreparedListener(new OnPreparedListener() {
+				  mMediaPlayer.setOnPreparedListener(new OnPreparedListener() {//预加载监听
 					@Override
 					public void onPrepared(MediaPlayer mp){//预加载完成
-						videoImage.setVisibility(View.GONE);
+						videoImage.setVisibility(View.GONE);//隐藏图片
 						mMediaPlayer.start();//开始播放
 
 						seekBar.setMax(mMediaPlayer.getDuration());//设置总进度
+						handler.post(mTicker);//更新进度
 					}
 				  });
 				  mMediaPlayer.prepare();
@@ -133,38 +108,29 @@ public class MainActivity extends Activity implements SurfaceTextureListener{
 	    }
 	}
 
-	private MediaPlayer.OnCompletionListener onCompletionListener=new MediaPlayer.OnCompletionListener() {
+	private SeekBar.OnSeekBarChangeListener onSeekBarChangeListener=new SeekBar.OnSeekBarChangeListener() {
 		@Override
-		public void onCompletion(MediaPlayer mediaPlayer) {
-			videoImage.setVisibility(View.VISIBLE);
-			seekBar.setProgress(0);
-			handler.removeCallbacks(mTicker);
+		public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {//进度改变
+		}
+
+		@Override
+		public void onStartTrackingTouch(SeekBar seekBar) {//开始拖动seekbar
+		}
+
+		@Override
+		public void onStopTrackingTouch(SeekBar seekBar) {//停止拖动seekbar
+			if(mMediaPlayer!=null&&mMediaPlayer.isPlaying()){//播放中
+				mMediaPlayer.seekTo(seekBar.getProgress());
+			}
 		}
 	};
 
-	/**
-	 * 如果sdcard没有文件就复制过去
-	 */
-	private void copyFile(String newFilePath) {
-	    AssetManager assetManager = this.getAssets();
-	    try {
-			File file=new File(newFilePath);
-			if(!file.exists()){
-				InputStream in = assetManager.open("ansen.mp4");
-				OutputStream out = new FileOutputStream(file);
-				byte[] buffer = new byte[1024];
-				int read;
-				while ((read = in.read(buffer)) != -1) {
-					out.write(buffer, 0, read);
-				}
-				in.close();
-				in = null;
-				out.flush();
-				out.close();
-				out = null;
-			}
-	    } catch (Exception e) {
-	        Log.e(Tag, e.getMessage());
-	    }
-	}
+	private MediaPlayer.OnCompletionListener onCompletionListener=new MediaPlayer.OnCompletionListener() {
+		@Override
+		public void onCompletion(MediaPlayer mediaPlayer) {//播放完成
+			videoImage.setVisibility(View.VISIBLE);
+			seekBar.setProgress(0);
+			handler.removeCallbacks(mTicker);//删除执行的Runnable 终止计时器
+		}
+	};
 }
