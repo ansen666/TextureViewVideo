@@ -9,7 +9,6 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.SystemClock;
-import android.util.Log;
 import android.view.Surface;
 import android.view.TextureView;
 import android.view.View;
@@ -46,12 +45,12 @@ public class MainActivity extends Activity{
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
 
-		TextureView textureView=(TextureView) findViewById(R.id.textureview);
+		TextureView textureView=findViewById(R.id.textureview);
 		textureView.setSurfaceTextureListener(surfaceTextureListener);//设置监听函数  重写4个方法
 
-		videoImage=(ImageView) findViewById(R.id.video_image);
+		videoImage=findViewById(R.id.video_image);
 
-		seekBar= (SeekBar) findViewById(R.id.seekbar);
+		seekBar= findViewById(R.id.seekbar);
 		seekBar.setOnSeekBarChangeListener(onSeekBarChangeListener);//seekbar改变监听
 	}
 
